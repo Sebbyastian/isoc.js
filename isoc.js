@@ -30,29 +30,37 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
             , 3: iterator => // translation phase 3 is tokenizing whitespace (including comments), header names, identifiers, "preprocessor numbers" (-shudders-), string literals and punctuators
                   (proxy =>
                   { let rxstub              = rx => str => (match => match && match[0])(rx.exec(str))
-                      , whitespace          = rxstub(/^(\/\/[^\n]*\n)|(\/\*(?:\*(?!\/)|[^*])*\*\/)|(\s+)/)
-                      , header_name         = rxstub(/^(\<[^>]+\>)|(\"[^\"]+\")/)
+                      , whitespace          = rxstub(/^((\/\/[^\n]*\n)|(\/\*(?:\*(?!\/)|[^*])*\*\/)|(\s+))/)
+                      , header_name         = rxstub(/^((\<[^>]+\>)|(\"[^\"]+\"))/)
                       , digit               = rxstub(/^\d+/)
-                      , identifier          = str => str.slice(Array.from(str).findIndex(c => { try { eval(`var ${c};`); } catch (error) { return true; } }))
-                      , preprocessor_number = str => (match => match && preprocessor_tail(match[0])(str))(/^\.?\d/.exec(str))
-                      , preprocessor_tail   = match => str => match + [ digit
+                      , identifier          = str => str.slice(0, (size => size >= 0 ? size : str.length)(Array.from(str).findIndex(c => { try { eval(`var ${c};`); } catch (error) { return true; } })))
+                      , preprocessor_number = str => (match => match && preprocessor_tail(match[0], str))(/^\.?\d/.exec(str)) // I haven't tested this...
+                      , preprocessor_tail   = (match, str) => match + [ digit
                                                                       , rxstub(/^[EePp][-+]/)
                                                                       , identifier
-                                                                      , rxstub(/^[.]/.exec(str)[0])
-                                                                      , preprocessor_number(str.slice(match.length))
-                                                                      ].reduce((prev, fun) => prev || (match => match && str.slice(match[0].length))(fun(str.slice(match[0].length))))
+                                                                      , rxstub(/^[.]/)
+                                                                      , preprocessor_number
+                                                                      ].reduce((prev, fun) => prev || (match => match && str.slice(match[0].length))(fun(str.slice(match.length))), null)
                       , character_constant  = rxstub(/^[LUu]?'(?:\\'|[^'])*'/)
-                      , string_literal      = rxstub(/^([LUu]|(u8))?"(?:\\"|[^"])*"/)
-                      , window = [];
-                    proxy.next = _ => [ whitespace
-                                      , header_name
-                                      , identifier
-                                      , preprocessor_number
-                                      , character_constant
-                                      , string_literal
-                                      ].reduce((prev, fun) => prev || (match => match && { expr_type: fun.toString()
-                                                                                         , expr_code: match
-                                                                                         })(fun(window.join(''))), undefined);
+                      , string_literal      = rxstub(/^([LUu])?"(?:\\"|[^"])*"/)
+                      , punctuator          = rxstub(/^(\[|\]|\(|\)|\{|\}|\.\.\.|\.|\+\+|\+\=|\+|\-\-|\-\>|\-\=|\-|\&\&|\&\=|\&|\*\=|\*|\~|\!\=|\!|\/\=|\/|\%\=|\%\>|\%\:\%\:|\%\:|\%|\<\<\=|\<\<|\>\>\=|\>\>|\<\%|\<\:|\<\=|\<|\>\=|\>|\=\=|\=|\^\=|\^|\|\||\|\=|\||\?|\:\>|\:|\;|\,|\#|\#\#)/)
+                      , window = []
+                      , tokfn = fn => eval(`({ 'fun':  ${fn}, 'name': fn })`) // -cringe- I know but if you look below we're only using it for single identifiers...
+                      , evaluate = c =>
+                                     (size => [ tokfn('whitespace')
+                                              , tokfn('header_name')
+                                              , tokfn('identifier')
+                                              , tokfn('preprocessor_number')
+                                              , tokfn('character_constant')
+                                              , tokfn('punctuator')
+                                              , tokfn('string_literal')
+                                              ].reduce((prev, fn) => prev || (match => match && match.length != size && { done:      c.done
+                                                                                                                        , expr_type: fn.name
+                                                                                                                        , expr_code: window.splice(0, match.length).join('')
+                                                                                                                        })(fn.fun(window.join(''))), undefined))(!c.done && window.push(c.value))
+                    proxy.next = _ => (result => result
+                                               ? result
+                                               : proxy.next())(evaluate(iterator.next()))
                    return proxy;
                   })(new Proxy({}, {}))
             };
@@ -61,10 +69,10 @@ var it;
 var a = phase[0]('??=define ??/\nfubar \\\n42'[Symbol.iterator]());
 do
 { it = a.next();
-} while (!it.done && !console.log(it.value));
+} while (console.log(it) || !it.done);
 
 
 var b = phase[0]("Let's /* not */ strip some comments // and say we did\n"[Symbol.iterator]()); 
 do
 { it = b.next();
-} while (!it.done && !console.log(it.value));
+} while (console.log(it) || !it.done);
