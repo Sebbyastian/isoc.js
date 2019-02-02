@@ -72,7 +72,7 @@ do
 } while (console.log(it) || !it.done);
 
 
-var b = phase[0]("Let's /* not */ strip some comments // and say we did\n"[Symbol.iterator]()); 
+var b = phase[0]("Let us /* not */ strip some comments // and say we did\n"[Symbol.iterator]()); 
 do
 { it = b.next();
 } while (console.log(it) || !it.done);
