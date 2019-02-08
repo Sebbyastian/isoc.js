@@ -46,22 +46,24 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                       , punctuator          = rxstub(/^(\[|\]|\(|\)|\{|\}|\.\.\.|\.|\+\+|\+\=|\+|\-\-|\-\>|\-\=|\-|\&\&|\&\=|\&|\*\=|\*|\~|\!\=|\!|\/\=|\/|\%\=|\%\>|\%\:\%\:|\%\:|\%|\<\<\=|\<\<|\>\>\=|\>\>|\<\%|\<\:|\<\=|\<|\>\=|\>|\=\=|\=|\^\=|\^|\|\||\|\=|\||\?|\:\>|\:|\;|\,|\#|\#\#)/)
                       , window = []
                       , tokfn = fn => eval(`({ 'fun':  ${fn}, 'name': fn })`) // -cringe- I know but if you look below we're only using it for single identifiers...
-                      , evaluate = c =>
-                                     (size => [ tokfn('whitespace')
-                                              , tokfn('header_name')
-                                              , tokfn('identifier')
-                                              , tokfn('preprocessor_number')
-                                              , tokfn('character_constant')
-                                              , tokfn('punctuator')
-                                              , tokfn('string_literal')
-                                              ].reduce((prev, fn) => prev || (match => match && match.length != size && { done:      c.done
-                                                                                                                        , expr_type: fn.name
-                                                                                                                        , expr_code: window.splice(0, match.length).join('')
-                                                                                                                        })(fn.fun(window.join(''))), undefined))(!c.done && window.push(c.value))
+                      , evaluate = _ => [ tokfn('whitespace')
+                                        , tokfn('header_name')
+                                        , tokfn('identifier')
+                                        , tokfn('preprocessor_number')
+                                        , tokfn('character_constant')
+                                        , tokfn('punctuator')
+                                        , tokfn('string_literal')
+                                        ].reduce((prev, fn) => prev || (match => match && (match.length != window.length || match.length == window.length && window.done)
+                                                                                       && { done:      match.length == window.length && window.done
+                                                                                          , expr_type: fn.name
+                                                                                          , expr_code: window.splice(0, match.length).join('')
+                                                                                          })(fn.fun(window.join(''))), undefined)
+                    , readahead = it => it.done ? window.done = it.done
+                                                : window.push(it.value) && readahead(iterator.next());
                     proxy.next = _ => (result => result
                                                ? result
-                                               : proxy.next())(evaluate(iterator.next()))
-                   return proxy;
+                                               : proxy.next())(evaluate(readahead(iterator.next())));
+                    return proxy;
                   })(new Proxy({}, {}))
             };
             
