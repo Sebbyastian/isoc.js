@@ -13,6 +13,7 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                                                 : window.shift()
                                          }
                                        : proxy.next())(iterator.next())
+                    proxy[Symbol.iterator] = _ => proxy;
                     return proxy;
                   })(new Proxy({}, {}))
             , 2: iterator => // translation phase 2 is replacing line splices
@@ -25,14 +26,15 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                                            , value: window.shift()
                                            }
                                        : proxy.next())(iterator.next());
+                   proxy[Symbol.iterator] = _ => proxy;
                    return proxy;
                   })(new Proxy({}, {}))
             , 3: iterator => // translation phase 3 is tokenizing whitespace (including comments), header names, identifiers, "preprocessor numbers" (-shudders-), string literals and punctuators
                   (proxy =>
                   { let rxstub              = rx => str => (match => match && match[0])(rx.exec(str))
                       , whitespace          = rxstub(/^((\/\/[^\n]*\n)|(\/\*(?:\*(?!\/)|[^*])*\*\/)|(\s))/)
-                      , header_name         = str => o.length >= 3 && !exprcmp({ expr_type: 'punctuator', expr_code: '#'       })(o[0]) &&
-                                                                      !exprcmp({ expr_type: 'identifier', expr_code: 'include' })(o.slice(1).find(expr => expr.expr_code.slice(-1) == '\n' || expr.expr_type != 'whitespace')) &&
+                      , header_name         = str => o.length >= 3 && !exprcmp({ type: 'punctuator', value: '#'       })(o[0]) &&
+                                                                      !exprcmp({ type: 'identifier', value: 'include' })(o.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')) &&
                                                                       rxstub(/^((\<[^>]+\>)|(\"[^\"]+\"))/)(str) // XXX: It might pay to expose a part of this pattern (the quote-matching part) externally
                       , digit               = rxstub(/^\d+/)
                       , identifier          = str => str.slice(0, (size => size >= 0 ? size : str.length)(Array.from(str).findIndex(c => { try { eval(`var ${c};`); } catch (error) { return true; } })))
@@ -46,29 +48,25 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                       , character_constant  = rxstub(/^[LUu]?'(?:\\'|[^'])*'/)
                       , string_literal      = rxstub(/^([LUu])?"(?:\\"|[^"])*"/)
                       , punctuator          = rxstub(/^(\[|\]|\(|\)|\{|\}|\.\.\.|\.|\+\+|\+\=|\+|\-\-|\-\>|\-\=|\-|\&\&|\&\=|\&|\*\=|\*|\~|\!\=|\!|\/\=|\/|\%\=|\%\>|\%\:\%\:|\%\:|\%|\<\<\=|\<\<|\>\>\=|\>\>|\<\%|\<\:|\<\=|\<|\>\=|\>|\=\=|\=|\^\=|\^|\|\||\|\=|\||\?|\:\>|\:|\;|\,|\#|\#\#)/)
-                      , i = []
+                      , i = Array.from(iterator)
                       , o = []
                       , tokfn = fn => eval(`({ 'fun':  ${fn}, 'name': fn })`) // -cringe- I know but if you look below we're only using it for single identifiers...
-                      , exprcmp = x => y => (x.expr_type && y.expr_type && (x.expr_type > y.expr_type) - (x.expr_type < y.expr_type)) ||
-                                            (x.expr_code && y.expr_code && (x.expr_code > y.expr_code) - (x.expr_code < y.expr_code))
-                      , evaluate = _ => ((newline_purge => newline_purge && o.splice(0, o.length))(o.length && o.slice(-1)[0].expr_code.slice(-1) == '\n'),
+                      , exprcmp = x => y => (x.type && y.type && (x.type > y.type) - (x.type < y.type)) ||
+                                            (x.value && y.value && (x.value > y.value) - (x.value < y.value))
+                      , evaluate = _ => ((newline_purge => newline_purge && o.splice(0, o.length))(o.length && o.slice(-1)[0].value.slice(-1) == '\n'),
                                          [ tokfn('whitespace')
                                          , tokfn('header_name')
                                          , tokfn('identifier')
                                          , tokfn('preprocessor_number')
                                          , tokfn('character_constant')
-                                         , tokfn('punctuator')
                                          , tokfn('string_literal')
-                                         ].reduce((prev, fn) => prev || (match => match && (match.length != i.length || match.length == i.length && i.done)
-                                                                                        && o[o.push({ done:      match.length == i.length && i.done
-                                                                                                    , expr_type: fn.name
-                                                                                                    , expr_code: i.splice(0, match.length).join('')
-                                                                                                    }) - 1])(fn.fun(i.join(''))), undefined))
-                    , readahead = it => it.done ? i.done = it.done
-                                                : i.push(it.value) && readahead(iterator.next());
-                    proxy.next = _ => (result => result
-                                               ? result
-                                               : proxy.next())(evaluate(readahead(iterator.next())));
+                                         , tokfn('punctuator')
+                                         ].reduce((prev, fn) => prev || (match => match && o[o.push({ done: match.length == i.length
+                                                                                                    , type: fn.name
+                                                                                                    , value: i.splice(0, match.length).join('')
+                                                                                                    }) - 1])(fn.fun(i.join(''))), undefined));
+                    proxy.next = _ => evaluate() || { done: true, i_length: i.length }
+                    proxy[Symbol.iterator] = _ => proxy;
                     return proxy;
                   })(new Proxy({}, {}))
             };
@@ -89,4 +87,10 @@ var c = phase[0](("#include \"this should be header_name\"\n" +
                   "\"this should be string_literal\"\n")[Symbol.iterator]()); 
 do
 { it = c.next();
+} while (console.log(it) || !it.done);
+
+var d = phase[0](("#include <stdio.h>\n" +
+                  "// lol\n")[Symbol.iterator]()); 
+do
+{ it = d.next();
 } while (console.log(it) || !it.done);
