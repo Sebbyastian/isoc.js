@@ -1,0 +1,40 @@
+.file {
+    display: inherit;
+    height: 95vh;
+    right: 1vw;
+    overflow-x: scroll;
+    overflow-y: scroll;
+    position: absolute;
+    top: 1vh;
+    width: 80vw;
+}
+.file_name {
+    bottom: 1vh;
+    left: 1vw;
+    position: absolute;
+    width: 16vw;
+}
+.file_name_list {
+    display: inherit;
+    height: 95vh;
+    left: 1vw;
+    overflow-x: scroll;
+    overflow-y: scroll;
+    position: absolute;
+    top: 1vh;
+    width: 16vw;
+}
+.punctuator {
+    color: #4D4D4D;
+    font-weight: bold;
+}
+.identifier, .header_name {
+    color: #7F7F7F;
+    font-weight: bold;
+}
+.string_literal {
+    color: #7F7F7F;
+}
+.whitespace {
+    color: #008000;
+}
