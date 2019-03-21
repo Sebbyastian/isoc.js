@@ -94,3 +94,9 @@ var d = phase[0](("#include <stdio.h>\n" +
 do
 { it = d.next();
 } while (console.log(it) || !it.done);
+
+var e = phase[0](("#define PI 3.141...\n" +
+                  "int main(void) { }\n")[Symbol.iterator]())
+do
+{ it = e.next();
+} while (console.log(it) || !it.done);
