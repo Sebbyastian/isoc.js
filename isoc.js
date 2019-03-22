@@ -44,7 +44,7 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                                                                       , identifier
                                                                       , rxstub(/^\./)
                                                                       , preprocessor_number
-                                                                      ].reduce((prev, fun) => prev || (match => || match && str.slice(0, match.length))(fun(str.slice(match.length))), null)
+                                                                      ].reduce((prev, fun) => prev || (match => match && str.slice(0, match.length))(fun(str.slice(match.length))), null)
                       , character_constant  = rxstub(/^[LUu]?'(?:\\'|[^'])*'/)
                       , string_literal      = rxstub(/^([LUu])?"(?:\\"|[^"])*"/)
                       , punctuator          = rxstub(/^(\[|\]|\(|\)|\{|\}|\.\.\.|\.|\+\+|\+\=|\+|\-\-|\-\>|\-\=|\-|\&\&|\&\=|\&|\*\=|\*|\~|\!\=|\!|\/\=|\/|\%\=|\%\>|\%\:\%\:|\%\:|\%|\<\<\=|\<\<|\>\>\=|\>\>|\<\%|\<\:|\<\=|\<|\>\=|\>|\=\=|\=|\^\=|\^|\|\||\|\=|\||\?|\:\>|\:|\;|\,|\#|\#\#)/)
