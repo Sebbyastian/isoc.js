@@ -44,11 +44,30 @@ with (document)
                                                                                                  }
                                                                                                  return elem;
                                                                                                })(document.createElement('span')));
-                  var selection = window.getSelection();
-                  console.log(selection);
+                  var selection = window.getSelection()
+                    , cursor_node = selection.anchorNode
+                    , cursor_offset = 0
+                    , range = null;
+                  while (firstChild && firstChild != cursor_node)
+                  { cursor_offset += firstChild.innerText.length;
+                    removeChild(firstChild);
+                  }
                   while (firstChild)
                     removeChild(firstChild);
-                  element.forEach(elem => appendChild(elem))
+                  element.forEach(elem => 
+                                  { appendChild(elem);
+                                    if (cursor_offset >= 0 && cursor_offset <= elem.innerText.length)
+                                    { with (range = document.createRange())
+                                      { setStartAfter(elem);
+                                        collapse(true);
+                                      }
+                                    }
+                                    cursor_offset -= elem.innerText.length;
+                                  });
+                  selection.removeAllRanges();
+                  if (range)
+                    selection.addRange(range);
+                  
                 };
     }
     with (appendChild(createElement('div')))
