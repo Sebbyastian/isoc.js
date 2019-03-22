@@ -28,12 +28,12 @@
     color: #4D4D4D;
     font-weight: bold;
 }
-.identifier, .header_name {
+.header_name, .identifier, .preprocessor_number {
     color: #7F7F7F;
     font-weight: bold;
 }
-.string_literal {
-    color: #7F7F7F;
+.string_literal, .character_constant {
+    color: #BFBFBF;
 }
 .whitespace {
     color: #008000;
