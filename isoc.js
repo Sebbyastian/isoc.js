@@ -37,14 +37,14 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                                                                       !exprcmp({ type: 'identifier', value: 'include' })(o.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')) &&
                                                                       rxstub(/^((\<[^>]+\>)|(\"[^\"]+\"))/)(str) // XXX: It might pay to expose a part of this pattern (the quote-matching part) externally
                       , digit               = rxstub(/^\d+/)
-                      , identifier          = str => str.slice(0, (size => size >= 0 ? size : str.length)(Array.from(str).findIndex(c => { try { eval(`var ${c};`); } catch (error) { return true; } })))
-                      , preprocessor_number = str => (match => match && preprocessor_tail(match[0], str))(/^\.?\d/.exec(str)) // I haven't tested this...
+                      , identifier          = str => (size => size > 0 && str.slice(0, size))(Array.from(str).findIndex(c => { try { eval(`var ${c};`); } catch (error) { return true; } }))
+                      , preprocessor_number = str => (match => match && preprocessor_tail(match[0], str))(/^\.?\d/.exec(str))
                       , preprocessor_tail   = (match, str) => match + [ digit
                                                                       , rxstub(/^[EePp][-+]/)
                                                                       , identifier
-                                                                      , rxstub(/^[.]/)
+                                                                      , rxstub(/^\./)
                                                                       , preprocessor_number
-                                                                      ].reduce((prev, fun) => prev || (match => match && str.slice(match[0].length))(fun(str.slice(match.length))), null)
+                                                                      ].reduce((prev, fun) => prev || (match => || match && str.slice(0, match.length))(fun(str.slice(match.length))), null)
                       , character_constant  = rxstub(/^[LUu]?'(?:\\'|[^'])*'/)
                       , string_literal      = rxstub(/^([LUu])?"(?:\\"|[^"])*"/)
                       , punctuator          = rxstub(/^(\[|\]|\(|\)|\{|\}|\.\.\.|\.|\+\+|\+\=|\+|\-\-|\-\>|\-\=|\-|\&\&|\&\=|\&|\*\=|\*|\~|\!\=|\!|\/\=|\/|\%\=|\%\>|\%\:\%\:|\%\:|\%|\<\<\=|\<\<|\>\>\=|\>\>|\<\%|\<\:|\<\=|\<|\>\=|\>|\=\=|\=|\^\=|\^|\|\||\|\=|\||\?|\:\>|\:|\;|\,|\#|\#\#)/)
