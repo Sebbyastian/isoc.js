@@ -1,6 +1,7 @@
 with (document)
 { with (body = createElement('body'))
-  { with (appendChild(createElement('div')))
+  { var file;
+    with (file = appendChild(createElement('div')))
     { with (attributes)
       { className = 'file';
         contentEditable = true;
@@ -43,32 +44,26 @@ with (document)
                                                                                                    innerText = expr.value;
                                                                                                  }
                                                                                                  return elem;
-                                                                                               })(document.createElement('span')));
-                  var selection = window.getSelection()
-                    , cursor_node = selection.anchorNode
-                    , cursor_offset = 0
-                    , range = null;
-                  while (firstChild && firstChild != cursor_node)
-                  { cursor_offset += firstChild.innerText.length;
-                    removeChild(firstChild);
-                  }
-                  while (firstChild)
-                    removeChild(firstChild);
-                  element.forEach(elem => 
-                                  { appendChild(elem);
-                                    if (cursor_offset >= 0 && cursor_offset <= elem.innerText.length)
-                                    { with (range = document.createRange())
-                                      { setStartAfter(elem);
-                                        collapse(true);
-                                      }
-                                    }
-                                    cursor_offset -= elem.innerText.length;
-                                  });
-                  selection.removeAllRanges();
-                  if (range)
-                    selection.addRange(range);
-                  
-                };
+                                                                                               })(document.createElement('span')))
+                    , selection, range;
+                  with (selection = window.getSelection())
+                  { with (range = getRangeAt(0))
+                    { var cursor_offset = selection.toString().length;
+                      setStart(file, 0);
+                      while (firstChild)
+                        removeChild(firstChild);
+                      element.map(elem =>
+                                    appendChild(elem)).reduce((tail, elem) =>
+                                                                tail || (console.log(`testing ${JSON.stringify(selection.toString())} (${selection.toString().length + elem.innerText.length} < ${cursor_offset})`),
+                                                                         selection.toString().length + elem.innerText.length <= cursor_offset
+                                                                         ? (setEndAfter(elem),
+                                                                            null)
+                                                                         : (setEnd(elem, selection.toString().length + elem.innerText.length - cursor_offset),
+                                                                            elem)), null) || setEndAfter(element[element.length - 1]);
+                      collapse();
+                    };
+                  };
+                }
     }
     with (appendChild(createElement('div')))
     { with (attributes)
