@@ -48,19 +48,19 @@ with (document)
                     , selection, range;
                   with (selection = window.getSelection())
                   { with (range = getRangeAt(0))
-                    { var cursor_offset = selection.toString().length;
-                      setStart(file, 0);
+                    { setStart(file, 0);
+                      var cursor_offset = selection.toString().length;
                       while (firstChild)
                         removeChild(firstChild);
-                      element.map(elem =>
-                                    appendChild(elem)).reduce((tail, elem) =>
-                                                                tail || (console.log(`testing ${JSON.stringify(selection.toString())} (${selection.toString().length + elem.innerText.length} < ${cursor_offset})`),
-                                                                         selection.toString().length + elem.innerText.length <= cursor_offset
-                                                                         ? (setEndAfter(elem),
-                                                                            null)
-                                                                         : (setEnd(elem, selection.toString().length + elem.innerText.length - cursor_offset),
-                                                                            elem)), null) || setEndAfter(element[element.length - 1]);
-                      collapse();
+                      element = element.reduce((list, elem) => list.concat(appendChild(elem).nodeType == 3 ? [ elem ] : Array.from(elem.childNodes)), []);
+                      element.reduce((tail, elem) =>
+                                       tail || ( selection.toString().length + (elem.nodeType != 3 || elem.length)  < cursor_offset ? (setEndAfter(elem), null)
+                                               : selection.toString().length + (elem.nodeType != 3 || elem.length) == cursor_offset ? (setEndAfter(elem), elem)
+                                                                                                                                    : (setEnd(elem, (elem.nodeType != 3 || elem.length) -
+                                                                                                                                                    (selection.toString().length + (elem.nodeType != 3 || elem.length)) % cursor_offset), elem)
+                                               ), null) || selectNodeContents(file);
+                      if (!document.getElementsByClassName('file_name')[0].innerText.length)
+                        collapse();
                     };
                   };
                 }
