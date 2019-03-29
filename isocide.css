@@ -8,13 +8,14 @@
     top: 1vh;
     width: 80vw;
 }
-.file_name {
+.path {
     bottom: 1vh;
+    font-size: 8pt;
     left: 1vw;
     position: absolute;
-    width: 16vw;
+    width: 97vw;
 }
-.file_name_list {
+.path_list {
     display: inherit;
     height: 95vh;
     left: 1vw;
@@ -37,4 +38,7 @@
 }
 .whitespace {
     color: #008000;
+}
+.empty:empty:before{
+    content:"empty"
 }
