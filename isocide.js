@@ -34,7 +34,7 @@ with (document)
                                             ot.value[ot_distance] == undefined
                                             ? ot.done
                                               ? token_list.concat({ 'type':  tail_type || ot.type
-                                                                  , 'value': it.slice(0, it_distance)
+                                                                  , 'value': it.slice(0, it.length)
                                                                   , 'put_by': 'same'
                                                                   })
                                               : state['same_search'](token.next(), 0, it, it_distance, token_list, tail_value, tail_type || ot.type)
@@ -51,6 +51,7 @@ with (document)
                                                                                         { with (elem)
                                                                                           { className = expr.type;
                                                                                             innerText = expr.value;
+                                                                                            setAttribute('data-put-by', expr.put_by);
                                                                                           }
                                                                                           return elem;
                                                                                         })(document.createElement('span')))
