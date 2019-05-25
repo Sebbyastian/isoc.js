@@ -33,6 +33,7 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                   (proxy =>
                   { let rxstub              = rx => str => (match => match && match[0])(rx.exec(str))
                       , whitespace          = rxstub(/^((\/\/[^\n]*\n)|(\/\*(?:\*(?!\/)|[^*])*\*\/)|(\s))/)
+                      , loathingkernel      = str => Array.from(str).findIndex((_, x) => (ws => ws && ws.length > 1)(whitespace(str.slice(x)))) >= 0 && header_name(str)
                       , header_name         = str => o.length >= 3 && !exprcmp({ type: 'punctuator', value: '#'       })(o[0]) &&
                                                                       !exprcmp({ type: 'identifier', value: 'include' })(o.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')) &&
                                                                       rxstub(/^((\<[^>]+\>)|(\"[^\"]+\"))/)(str) // XXX: It might pay to expose a part of this pattern (the quote-matching part) externally
@@ -55,6 +56,7 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                                             (x.value && y.value && (x.value > y.value) - (x.value < y.value))
                       , evaluate = _ => ((newline_purge => newline_purge && o.splice(0, o.length))(o.length && o.slice(-1)[0].value.slice(-1) == '\n'),
                                          [ tokfn('whitespace')
+                                         , tokfn('loathingkernel')
                                          , tokfn('header_name')
                                          , tokfn('identifier')
                                          , tokfn('preprocessor_number')
@@ -99,4 +101,9 @@ var e = phase[0](("#define PI 3.141...\n" +
                   "int main(void) { }\n")[Symbol.iterator]())
 do
 { it = e.next();
+} while (console.log(it) || !it.done);
+
+var f = phase[0](("#include </* erroneous */>\n")[Symbol.iterator]())
+do
+{ it = f.next();
 } while (console.log(it) || !it.done);
