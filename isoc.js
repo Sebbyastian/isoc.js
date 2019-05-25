@@ -33,7 +33,7 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                   (proxy =>
                   { let rxstub              = rx => str => (match => match && match[0])(rx.exec(str))
                       , whitespace          = rxstub(/^((\/\/[^\n]*\n)|(\/\*(?:\*(?!\/)|[^*])*\*\/)|(\s))/)
-                      , loathingkernel      = str => Array.from(str).findIndex((_, x) => (ws => ws && ws.length > 1)(whitespace(str.slice(x)))) >= 0 && header_name(str)
+                      , loathingkernel      = str => (header => header && Array.from(header).findIndex((_, x) => (ws => !console.log(ws) && ws && ws.length > 1)(whitespace(str.slice(x)))) >= 0 && header)(header_name(str))
                       , header_name         = str => o.length >= 3 && !exprcmp({ type: 'punctuator', value: '#'       })(o[0]) &&
                                                                       !exprcmp({ type: 'identifier', value: 'include' })(o.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')) &&
                                                                       rxstub(/^((\<[^>]+\>)|(\"[^\"]+\"))/)(str) // XXX: It might pay to expose a part of this pattern (the quote-matching part) externally
