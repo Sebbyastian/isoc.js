@@ -71,6 +71,41 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                     proxy[Symbol.iterator] = _ => proxy;
                     return proxy;
                   })(new Proxy({}, {}))
+            , 4: iterator => // translation phase 4
+                  (proxy =>
+                  { let i = Array.from(iterator)
+                      , o = []
+                      , exprcmp = x => y => (x.type && y.type && (x.type > y.type) - (x.type < y.type)) ||
+                                            (x.value && y.value && (x.value > y.value) - (x.value < y.value))
+                      , exprncmp = xs => (ys, ym) => ym ? exprncmp(xs)(ys, [])
+                                                        : xs.length ? exprcmp(xs[0])(ys[0]) ||
+                                                                      exprncmp(xs.slice(1))(ys.slice(ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0]))
+                                                                    : ym
+                      , exprcat = (xf, yf, ym) => (xs => xs.length && yf(xs))(xf(ym))
+                      , exprncat = (fs, ym) => fs.count > 2 ? exprncat(fs.slice(2), exprcat(ym, fs[0], fs[1]))
+                                                            : exprcat(ym, fs[0], fs[1])
+                      , include = ym => exprncmp([ { 'type': 'punctuator', 'value': '#'       }
+                                                , { 'type': 'identifier', 'value': 'include' }
+                                                , { 'type': 'header_name'                    } ])(i)
+                      , define = ym => exprncmp([ { 'type': 'punctuator', 'value': '#'        }
+                                               , { 'type': 'identifier', 'value': 'define'   }
+                                               , { 'type': 'identifier'                      } ])(i)
+                      , define_macro = _ => exprncat([ define
+                                                     , (ym => ym && ym.concat(exprncmp([ { 'type': 'punctuator', 'value': '(' } ])
+                                                     , identifier_list
+                                                     , (ym => ym && ym.concat(exprncmp([ { 'type': 'punctuator', 'value': ')' } ])], [])
+                      , identifier_list = ym => exprncat([ identifier
+                                                         , (ym => ym && ym.concat(exprncmp([ { 'type': 'punctuator', 'value': ',' } ])
+                                                         , identifier_list
+                                                         ], ym)
+
+                      //, define_macro = _ =>(i.slice(ym.count), ym))(define())
+                      //, identifier_list = _ => (ym => ym && ym.concat(exprncmp([ { 'type': 'identifier' }
+                      //                                                         , { 'type': 'punctuator', 'value': ',' } ])(i.slice(ym.count), ym))(identifier_list()) || ym)
+                      //, define_macro_identifier_list = _ => (ym => ym && exprncmp([ { 'type': 'punctuator', 'value': ')' } ])(i.slice(ym.count), ym)(identifier_list(define_macro()))
+                                                    
+ 
+                      
             };
             
 var it;
