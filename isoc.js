@@ -81,52 +81,60 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                       , exprncmp = xs => (ys, ym) => !ym ? exprncmp(xs)(ys, [])
                                                          : xs.length && ys.length ? xs[0].constructor == Array ? exprncmp(xs[0].concat(xs.slice(1)))(ys, ym) || ym
                                                                                                                : exprcmp(xs[0])(ys[0]) ||
-                                                                                                                 exprncmp(xs.slice(1))(ys.slice(1+ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0]))
+                                                                                                                 exprncmp(xs.slice(1))(ys.slice(1+ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0])) // xxx: I need a whitespace flag
                                                                                   : ym
-                      , pp_include = [ { 'type': 'punctuator', 'value': '#'       }
-                                     , { 'type': 'identifier', 'value': 'include' }
-                                     , { 'type': 'header_name'                    } ]
-                      , pp_define = [ { 'type': 'punctuator', 'value': '#'        }
-                                    , { 'type': 'identifier', 'value': 'define'   }
-                                    , { 'type': 'identifier'                      } ]
+                      , type = t => v => { 'type': t, 'value': v }
+                      , punctuator = type `punctuator`
+                      , identifier = type `identifier`
+                      , pp = identifier => [ punctuator `#`
+                                           , identifier (identifier) ]
+                      , pp_include = [ pp `include`
+                                     , type `header_name` () ]
+                      , pp_define = [ pp `define`
+                                    , identifier () ]
                       , pp_define_macro = [ pp_define
-                                          , { 'type': 'punctuator', 'value': '(' }
-                                          , { 'type': 'punctuator', 'value': ')' } ]
+                                          , punctuator `(`
+                                          , punctuator `)` ]
                       , pp_define_macro_wfargs = [ pp_define
-                                                 , { 'type': 'punctuator', 'value': '(' }
+                                                 , punctuator `(`
                                                  , identifier_list
-                                                 , { 'type': 'punctuator', 'value': ')' } ]
+                                                 , punctuator `)` ]
                       , pp_define_macro_wvargs = [ pp_define
-                                                 , { 'type': 'punctuator', 'value': '(' }
-                                                 , { 'type': 'punctuator', 'value': '...' }
-                                                 , { 'type': 'punctuator', 'value': ')' } ]
+                                                 , punctuator `(`
+                                                 , punctuator `...`
+                                                 , punctuator `)`   ]
                       , pp_define_macro_wfvargs = [ pp_define
-                                                  , { 'type': 'punctuator', 'value': '(' }
+                                                  , punctuator `(`
                                                   , identifier_list
-                                                  , { 'type': 'punctuator', 'value': ',' }
-                                                  , { 'type': 'punctuator', 'value': '...' }
-                                                  , { 'type': 'punctuator', 'value': ')' } ]
-                      , identifier_list = [ { 'type': 'identifier'               }
-                                          , [ { 'type': 'punctuator', 'value': ',' }
+                                                  , punctuator `,`
+                                                  , punctuator `...`
+                                                  , punctuator `)`   ]
+                      , identifier_list = [ identifier ()
+                                          , [ punctuator `,`
                                             , identifier_list ] ]
-                      , pp_if = [ { 'type': 'punctuator', 'value': '#'        }
-                                , { 'type': 'identifier', 'value': 'if'       }
+                      , pp_if = [ pp `if`
                                 , constant_expression ]
-                      , pp_ifdef = [ { 'type': 'punctuator', 'value': '#'        }
-                                   , { 'type': 'identifier', 'value': 'ifdef'    }
-                                   , { 'type': 'identifier'                      } ]
-                      , pp_ifndef = [ { 'type': 'punctuator', 'value': '#'        }
-                                    , { 'type': 'identifier', 'value': 'ifdef'    }
-                                    , { 'type': 'identifier'                      } ])(i)
-                      , pp_elif = ym => exprncmp([ { 'type': 'punctuator', 'value': '#'        }
-                                                 , { 'type': 'identifier', 'value': 'elif'     }
-                                                 , { 'type': 'constant_expression'             } ])(i)
-                      , pp_else = ym => exprncmp([ { 'type': 'punctuator', 'value': '#'        }
-                                               , { 'type': 'identifier', 'value': 'else'      } ])(i)
-                      , pp_endif = ym => exprncmp([ { 'type': 'punctuator', 'value': '#'        }
-                                                  , { 'type': 'identifier', 'value': 'endif'       } ])(i)
-                      
-                      
+                      , pp_ifdef = [ pp `ifdef`
+                                   , identifier () ]
+                      , pp_ifndef = [ pp `ifndef`
+                                    , identifier () ]
+                      , pp_elif = [ pp `elif`
+                                  , constant_expression ]
+                      , pp_elifdef = [ pp `elifdef`
+                                     , identifier () ]
+                      , pp_elifndef = [ pp `elifndef`
+                                      , identifier () ]
+                      , pp_else = pp `else`
+                      , pp_endif = pp `endif`
+                      , pp_undef = [ pp `undef`
+                                   , identifier () ]
+                      , pp_line = [ pp `line`
+                                  , pp_tokens ]
+                      , pp_error = [ pp `error`
+                                   , pp_tokens  ]
+                      , pp_pragma = [ pp `pragma`
+                                    , pp_tokens   ]
+                      , pp_null = [ type `punctuator` `#` ]
                       //, define_macro = _ =>(i.slice(ym.count), ym))(define())
                       //, identifier_list = _ => (ym => ym && ym.concat(exprncmp([ { 'type': 'identifier' }
                       //                                                         , { 'type': 'punctuator', 'value': ',' } ])(i.slice(ym.count), ym))(identifier_list()) || ym)
