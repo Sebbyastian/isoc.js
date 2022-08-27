@@ -87,7 +87,7 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                       , punctuator = type `punctuator`
                       , identifier = type `identifier`
                       , pp = id => [ punctuator `#`
-                                   , identifier (id, props) ]
+                                   , identifier (id) ]
                       , pp_include = [ pp `include`
                                      , type `header_name` () ]
                       , pp_define = [ pp `define`
