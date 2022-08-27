@@ -81,13 +81,13 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                       , exprncmp = xs => (ys, ym) => !ym ? exprncmp(xs)(ys, [])
                                                          : xs.length && ys.length ? xs[0].constructor == Array ? exprncmp(xs[0].concat(xs.slice(1)))(ys, ym) || ym
                                                                                                                : exprcmp(xs[0])(ys[0]) ||
-                                                                                                                 exprncmp(xs.slice(1))(ys.slice(1+ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0])) // xxx: I need a whitespace flag
+                                                                                                                 exprncmp(xs.slice(1))(ys.slice(1+ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0])) // xxx: somehow distinguish between `#define symbol (whatnot)` and `#define symbol(whatnot)`
                                                                                   : ym
                       , type = t => v => { 'type': t, 'value': v }
                       , punctuator = type `punctuator`
                       , identifier = type `identifier`
-                      , pp = identifier => [ punctuator `#`
-                                           , identifier (identifier) ]
+                      , pp = id => [ punctuator `#`
+                                   , identifier (id, props) ]
                       , pp_include = [ pp `include`
                                      , type `header_name` () ]
                       , pp_define = [ pp `define`
