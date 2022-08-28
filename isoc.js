@@ -81,34 +81,28 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                       , exprncmp = xs => (ys, ym) => !ym ? exprncmp(xs)(ys, [])
                                                          : xs.length && ys.length ? xs[0].constructor == Array ? exprncmp(xs[0].concat(xs.slice(1)))(ys, ym) || ym
                                                                                                                : exprcmp(xs[0])(ys[0]) ||
-                                                                                                                 exprncmp(xs.slice(1))(ys.slice(1+ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0])) // xxx: somehow distinguish between `#define symbol (whatnot)` and `#define symbol(whatnot)`
+                                                                                                                 exprncmp(xs.slice(1))(ys.slice(1+ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0])) // xxx: handle properties before whitespace
                                                                                   : ym
-                      , type = t => v => { 'type': t, 'value': v }
-                      , punctuator = type `punctuator`
-                      , identifier = type `identifier`
-                      , pp = id => [ punctuator `#`
-                                   , identifier (id) ]
-                      , pp_include = [ pp `include`
-                                     , type `header_name` () ]
-                      , pp_define = [ pp `define`
-                                    , identifier () ]
-                      , pp_define_macro = [ pp_define
-                                          , punctuator `(`
-                                          , punctuator `)` ]
-                      , pp_define_macro_wfargs = [ pp_define
-                                                 , punctuator `(`
-                                                 , identifier_list
-                                                 , punctuator `)` ]
-                      , pp_define_macro_wvargs = [ pp_define
-                                                 , punctuator `(`
-                                                 , punctuator `...`
-                                                 , punctuator `)`   ]
-                      , pp_define_macro_wfvargs = [ pp_define
-                                                  , punctuator `(`
-                                                  , identifier_list
-                                                  , punctuator `,`
-                                                  , punctuator `...`
-                                                  , punctuator `)`   ]
+                      , type = t => c => v => { 'type': t, 'contin': c, 'value': v }
+                      , punctuator = v => c => type `punctuator` (c) (v)
+                      , identifier = v => c => type `identifier` (c) (v)
+                      , pp = punctuator `#` ` ` identifier
+                      , pp_include = pp `include` ` ` (header_name) `\n`
+                      , replacement_list = c => /* xxx*/
+                      , pp_define = v => c => pp `define` ` ` (identifier) (v) (c)
+                      , pp_define_macro = pp_define `` (punctuator) `(` ` ` (punctuator) `)`
+
+                      , pp_define_macro_wfargs = pp_define({ 'then': [ punctuator `(`
+                                                                     , identifier_list
+                                                                     , punctuator `)` ] })
+                      , pp_define_macro_wvargs = pp_define({ 'then': [ punctuator `(`
+                                                                     , punctuator `...`
+                                                                     , punctuator `)` ] })
+                      , pp_define_macro_wfvargs = pp_define({ 'then': [ punctuator `(`
+                                                                      , identifier_list
+                                                                      , punctuator `,`
+                                                                      , punctuator `...`
+                                                                      , punctuator `)`   ] })
                       , identifier_list = [ identifier ()
                                           , [ punctuator `,`
                                             , identifier_list ] ]
