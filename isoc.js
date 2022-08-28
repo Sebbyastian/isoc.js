@@ -78,19 +78,24 @@ var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phase
                       , o = []
                       , exprcmp = x => y => (x.type && y.type && (x.type > y.type) - (x.type < y.type)) ||
                                             (x.value && y.value && (x.value > y.value) - (x.value < y.value))
-                      , exprncmp = xs => (ys, ym) => !ym ? exprncmp(xs)(ys, [])
-                                                         : xs.length && ys.length ? xs[0].constructor == Array ? exprncmp(xs[0].concat(xs.slice(1)))(ys, ym) || ym
-                                                                                                               : exprcmp(xs[0])(ys[0]) ||
-                                                                                                                 exprncmp(xs.slice(1))(ys.slice(1+ys.slice(1).find(expr => expr.value.slice(-1) == '\n' || expr.type != 'whitespace')), ym.concat(ys[0])) // xxx: handle properties before whitespace
-                                                                                  : ym
+                      , match = x => (ys, ym) => !ym ? match(x)(ys, [])
+                                                     : ys.length ? exprcmp(x)(ys[0]) || exprncmp(x.contin)(ys.slice(1), ym.concat(ys[0]))
+                                                                 : ym
+                      , end = _ => true
                       , type = t => c => v => { 'type': t, 'contin': c, 'value': v }
                       , punctuator = v => c => type `punctuator` (c) (v)
                       , identifier = v => c => type `identifier` (c) (v)
-                      , pp = punctuator `#` ` ` identifier
-                      , pp_include = pp `include` ` ` (header_name) `\n`
-                      , replacement_list = c => /* xxx*/
-                      , pp_define = v => c => pp `define` ` ` (identifier) (v) (c)
-                      , pp_define_macro = pp_define `` (punctuator) `(` ` ` (punctuator) `)`
+                      , whitespace = v => c => type `whitespace` (c) (v)
+                        /* (): capture
+                         * whitespace ``: 0 or more, spaces, tabs or block comments only
+                         * whitespace ` `: 1 or more as above
+                         * whitespace `\n`: 1 or more newlines
+                         */
+                      , pp = (punctuator `#`) (whitespace ``) (identifier ())
+                      , pp_include = (pp `include`) (whitespace ``) (header_name ()) (whitespace `\n`)
+                      // , replacement_list = c => not (whitespace `\n`) (end)
+                      , pp_define = v => c => (pp `define`) (whitespace ` `) (identifier(v)(c))
+                      , pp_define_macro = (pp_define ()) (punctuator) `(` (whitespace) ` ` (punctuator) `)`
 
                       , pp_define_macro_wfargs = pp_define({ 'then': [ punctuator `(`
                                                                      , identifier_list
