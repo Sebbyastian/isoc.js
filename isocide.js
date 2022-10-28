@@ -4,6 +4,10 @@ with (document)
       , path = appendChild(createElement('div'))
       , path_list = appendChild(createElement('select'))
       , relfn = path => Array.from(path).reduce((str, c) => c == '/' ? '' : str.concat(c), '')
+      , ham = (x, y) => function ham_(x_, y_, z, x_c, y_c) { return x_ == x.length ? z + y.length - y_ : y_ == y.length ? z + x.length - x_ : x[x_] == y[y_] ? ham_(x_ + 1, y_ + 1, z, 1, 1) : Math.min(x_c ? ham_(x_ + 1, y_, z + 1, 1, 0) : Infinity, y_c ? ham_(x_, y_ + 1, z + 1, 0, 1) : Infinity, x_c && y_c ? ham_(x_ + 1, y_ + 1, z + 1, 1, 1) : Infinity) }(0, 0, 0, 1, 1)
+      , key_map = [ 'qwertyuiop⌫', 'asdfghjkl⎆', '⇧zxcvbnm⇧' ].map(col => Array.from(col))
+      , id_map = key_map.map(row => Array.from(row).filter(c => /\w/.test(c)))
+      , fuzz = (input, map) => Array.from(input).map(c => (coord => map.slice(!!coord[0] * ~-coord[0], coord[0] + 2).reduce((result, row) => result.concat(row.slice(!!coord[1] * ~-coord[1], coord[1] + 2).filter(c_ => c != c_)), [c]))(map.reduce((result, row, rindex) => result || (cindex => cindex >= 0 && [ rindex, cindex ])(row.indexOf(c)), false))).flat().join('')
       , absfn = path_ =>
                   path => 
                     (match => !match || match.length == 0 ? path
