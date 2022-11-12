@@ -1,5 +1,4 @@
-var phase = { 0: iterator => phase[3](phase[2](phase[1](iterator))) // all phases so far combined
-            , 1: iterator => // translation phase 1 is replacing trigraphs
+var phase = { 1: iterator => // translation phase 1 is replacing trigraphs
                   (proxy =>
                   { let trigraph =
                     ({ '??=' : '#', '??(' : '[', '??/' : '\\'
