@@ -20,21 +20,25 @@ with (document)
                                         : path)(/^(?:\<([^>]+)\>)|(?:"([^"])")$/.exec(path_))
       , tokenise = _ =>
         { with (file)
-          { var token = phase.values.map((arg, fun) => fun(arg), innerText[Symbol.iterator]())))
-              , diff_ = (ot, ot_distance, it, it_distance, token_list, tail_value, tail_type) =>
-                          ot.value[ot_distance] == undefined
-                          ? ot.done
-                            ? token_list.concat({ 'type':  tail_type || ot.type
-                                                , 'value': it.slice(0, it_distance)
+          { var token = phase.values.map((arg, fun) => [ fun(arg[0]), ...arg ], [ innerText[Symbol.iterator]() ])))
+              , diff_ = (x, xt, xt_distance, y, yt, yt_distance, token_list, tail_value, tail_type) =>
+                          xt.value[xt_distance] == undefined
+                          ? x.done
+                            ? token_list.concat({ 'type':  tail_type || xt.type
+                                                , 'value': yt.value.slice(0, yt_distance)
                                                 , 'annotation_type': 'diff'
                                                 })
-                            : diff_(token.next(), 0, it.slice(it_distance), 0
-                                                , token_list.concat({ 'type':  tail_type || ot.type
-                                                                    , 'value': it.slice(0, it_distance)
-                                                                    , 'annotation_type': 'diff'
-                                                                    }), '')
-                                                     : /* xxx, streets are calling */ state[ot.value[ot_distance] == it[it_distance] ? 'diff_search' : 'same_search'](ot, ot_distance + 1, it, it_distance + 1, token_list, tail_value + it[it_distance], tail_type || ot.type)
-              , diff = phases => phases.map({ '
+                            : diff_(x, x.next(), 0, y
+                                     , { ...yt, 'value': yt.value.slice(yt_distance) }, 0
+                                     , token_list.concat({ 'type':  tail_type || ot.type
+                                                         , 'value': it.slice(0, it_distance)
+                                                         , 'annotation_type': 'diff'
+                                                         }), '')
+                          : yt.value[yt_distance] == undefined
+                            ? y.done
+                              ? /* xxx, streets are calling */ state[ot.value[ot_distance] == it[it_distance] ? 'diff_search' : 'same_search'](ot, ot_distance + 1, it, it_distance + 1, token_list, tail_value + it[it_distance], tail_type || ot.type)
+              , diff = phases => phases.reduce(x, y) => diff_(x.next(), 0, y.next(), 0, [], '')
+                        /* Xxx more streets */{ '
                          , 'same_search': (ot, ot_distance, it, it_distance, token_list, tail_value, tail_type) =>
                                             ot.value[ot_distance] == undefined
                                             ? ot.done
